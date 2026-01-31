@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Gift for Nemy teimosa 💖</title>
+<link href="https://fonts.googleapis.com/css2?family=Pacifico&display=swap" rel="stylesheet">
+
+<style>
+  body {
+    margin: 0;
+    background: #fff3b0;
+    font-family: Arial, sans-serif;
+    overflow: hidden;
+    height: 100vh;
+  }
+
+  /* Telas */
+  #startScreen, #game, #phaseWin, #lose, #memoryGame, #phase2Win, #mazeGameScreen, #mazeWinScreen, #letterScreen {
+    position: absolute;
+    inset: 0;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    text-align: center;
+  }
+
+  #startScreen.active, #game.active, #phaseWin.active, #lose.active, #memoryGame.active, #phase2Win.active, #mazeGameScreen.active, #mazeWinScreen.active, #letterScreen.active {
+    display: flex;
+  }
+
+  #startScreen img, #phaseWin img, #phase2Win img, #mazeWinScreen img {
+    max-width: 60%;
+    border-radius: 15px;
+    margin-bottom: 20px;
+  }
+
+  h1 { font-size: 28px; margin-bottom: 15px; }
+  .corzinha{
+    color: #fecf12;
+  }
+  .gradient-yellow {
+  background: linear-gradient(90deg, #fff176, #f1c40f, #f39c12);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  font-weight: bold;
+  background-size: 300% 300%;
+  animation: colorShift 2s linear infinite;
+}
+
+@keyframes colorShift {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+.serpentine {
+  position: fixed;
+  top: -20px;
+  width: 4px;          /* largura fina */
+  height: 20px;        /* comprimento da serpentina */
+  background: hsl(50, 70%, 60%); /* cor inicial, será sobrescrita pelo JS */
+  pointer-events: none;
+  border-radius: 2px;
+  animation: fallRotate linear forwards;
+}
+
+@keyframes fallRotate {
+  0% { transform: translateY(0) rotate(0deg); opacity: 1; }
+  100% { transform: translateY(100vh) rotate(720deg); opacity: 0; }
+}
+
+
+  button {
+    padding: 12px 24px;
+    font-size: 18px;
+    cursor: pointer;
+    border: none;
+    border-radius: 6px;
+    background: #f1c40f;
+    color: #fff;
+  }
+
+  /* Fase 1 */
+  #game { background: #fff3b0; }
+  .player { position: absolute; bottom: 10%; font-size: 48px; user-select: none; cursor: pointer; }
+  .item { position: absolute; font-size: 36px; }
+  #score { position: fixed; top: 10px; left: 10px; font-size: 20px; }
+  #minScore { position: fixed; top: 40px; left: 10px; font-size: 18px; color: #f39c12; }
+
+  .overlay {
+    position: absolute; inset: 0;
+    background: rgba(0,0,0,0.6);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    color: white;
+    text-align: center;
+  }
+
+  .overlay.active { display: flex; }
+
+  /* Memória */
+  #memoryBoard { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; max-width: 500px; perspective: 600px; }
+  .memoryCard { width: 70px; height: 70px; cursor: pointer; user-select: none; border-radius: 12px; transform-style: preserve-3d; transition: transform 0.5s; position: relative; }
+  .memoryCardInner { position: absolute; width: 100%; height: 100%; border-radius: 12px; backface-visibility: hidden; display: flex; align-items: center; justify-content: center; font-size: 36px; }
+  .memoryCardBack { background: #f1c40f; }
+  .memoryCardFront { background: #fff9c4; transform: rotateY(180deg); }
+  .memoryCard.flipped { transform: rotateY(180deg); }
+  #memoryScore { margin-top: 20px; font-size: 18px; color: #f39c12; }
+
+  /* Labirinto Fase 3 */
+  #mazeBoard { display: grid; gap: 2px; margin-top: 10px; }
+  .mazeCell { width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; font-size: 18px; }
+  .wall { background: #f39c12; }
+  .path { background: #fff9c4; }
+
+  /* Botões de controle */
+  #controls { display: grid; grid-template-areas: "up" "mid" "down"; gap: 5px; margin-top: 10px; }
+  .controlRow { display: flex; justify-content: center; gap: 5px; }
+  .controlBtn { padding: 15px; font-size: 20px; border-radius: 8px; background: #f1c40f; color: white; border: none; cursor: pointer; }
+
+  /* Tela carta */
+ #letterContent {
+  max-width: 500px;
+  width: 90%;
+  max-height: 300px;
+  overflow-y: auto;
+  background: #fff9c4;
+  padding: 30px;
+  border-radius: 15px;
+  font-size: 18px;
+  line-height: 1.8;          /* mais espaçamento entre linhas */
+  white-space: pre-wrap;
+  box-shadow: 0 0 15px rgba(0,0,0,0.2);
+  border: 4px solid #f1c40f;
+  position: relative;
+  font-family: 'Pacifico', cursive; /* fonte cursiva */
+  margin: 20px auto;
+  box-sizing: border-box;
+  text-align: left;          /* alinha o texto à esquerda */
+}
+
+
+  /* scrollbar discreta */
+  #letterContent::-webkit-scrollbar { width: 6px; }
+  #letterContent::-webkit-scrollbar-thumb { background-color: rgba(241, 196, 15, 0.7); border-radius: 3px; }
+  #letterContent::-webkit-scrollbar-track { background: transparent; }
+
+  /* Corações */
+  .heart {
+    position: fixed;
+    z-index: 9999;
+    pointer-events: none;
+    animation: floatUp linear forwards;
+  }
+
+  @keyframes floatUp {
+    0% { transform: translateY(100vh) scale(0.5); opacity: 1; }
+    100% { transform: translateY(-50px) scale(1); opacity: 0; }
+  }
+
+  /* Confete */
+  .confetti {
+    position: fixed;
+    top: -10px;
+    border-radius: 50%;
+    z-index: 9999;
+    pointer-events: none;
+    animation: fall linear forwards;
+  }
+
+  @keyframes fall {
+    0% { transform: translateY(0) rotate(0deg); }
+    100% { transform: translateY(100vh) rotate(360deg); }
+  }
+</style>
+</head>
+<body>
+
+<!-- Tela inicial -->
+<div id="startScreen" class="active">
+  <img src="https://media.tenor.com/7kEKI-C32ZAAAAAM/peach-cat.gif" alt="Foto de Aniversário">
+  <h1><span class="gradient-yellow">Happy Birthday!!</span> 🎉</h1>
+    <p>Are you ready?? 😺</p>
+    <p></p>
+  <button onclick="startGame()">Next!</button>
+</div>
+
+<!-- Fase 1 -->
+<div id="game">
+  <div id="player" class="player">😊</div>
+  <div id="score">Hearts: 0</div>
+  <div id="minScore">Necessary hearts: 15</div>
+</div>
+
+<!-- Tela vitória Fase 1 -->
+<div id="phaseWin">
+  <img src="https://i.pinimg.com/originals/54/d1/07/54d10759bbd99b4c55670027933ac447.gif" alt="Parabéns!">
+  <h1><span class="corzinha">Good job! You passed the 1st phase! 🎉</span></h1>
+  <button onclick="startMemoryGame()">Next phase!</button>
+</div>
+
+<!-- Tela derrota -->
+<div id="lose" class="overlay">
+  <h1>💀 Game over! Dummy Nemo! 🫠</h1>
+  <button onclick="restartGame()">Try again</button>
+</div>
+
+<!-- Fase 2 - Memória -->
+<div id="memoryGame">
+  <h1>Find the 7 pairs! 💛</h1>
+  <div id="memoryBoard"></div>
+  <div id="memoryScore">Pairs found: 0 / 7</div>
+</div>
+
+<!-- Tela vitória Fase 2 -->
+<div id="phase2Win">
+  <img src="https://i.pinimg.com/originals/62/59/f1/6259f15d830b56d23db317e4b19828f0.gif" alt="Parabéns!">
+  <h1><span class="corzinha">Good job! You passed the 2nd phase! 🎉</span></h1>
+  <button onclick="startMazeGame()">Next phase!</button>
+</div>
+
+<!-- Fase 3 - Labirinto -->
+<div id="mazeGameScreen">
+  <h1>Get to the letter! 🐱➜💌</h1>
+  <div id="mazeBoard"></div>
+  <div id="controls">
+    <div class="controlRow"><button class="controlBtn" onclick="movePlayer(0,-1)">↑</button></div>
+    <div class="controlRow">
+      <button class="controlBtn" onclick="movePlayer(-1,0)">←</button>
+      <button class="controlBtn" onclick="movePlayer(1,0)">→</button>
+    </div>
+    <div class="controlRow"><button class="controlBtn" onclick="movePlayer(0,1)">↓</button></div>
+  </div>
+</div>
+
+<!-- Tela vitória labirinto -->
+<div id="mazeWinScreen">
+  <img src="https://i.pinimg.com/originals/04/f6/a0/04f6a0027a2be7e48d6c3e84256d9e71.gif" alt="Parabéns!">
+  <h1><span class="corzinha">Good job! You collected the letter!! 🎉</span></h1>
+  <button onclick="openLetter()">Open the letter!</button>
+</div>
+
+<!-- Tela da carta -->
+<div id="letterScreen">
+  <div id="letterContent"></div>
+</div>
+
+<script>
+ let serpentineInterval;
+
+function startSerpentines() {
+  if (serpentineInterval) return;
+
+  serpentineInterval = setInterval(() => {
+    if (!startScreen.classList.contains("active")) {
+      clearInterval(serpentineInterval);
+      serpentineInterval = null;
+      return;
+    }
+
+    const s = document.createElement("div");
+    s.classList.add("serpentine");
+
+    // cor aleatória em tons festivos
+    s.style.background = `hsl(${Math.random()*360}, 80%, 50%)`;
+
+    // posição horizontal aleatória
+    s.style.left = Math.random() * 100 + "vw";
+
+    // tamanho e duração aleatória
+    const height = Math.random()*15 + 15;
+    s.style.height = height + "px";
+    s.style.width = Math.random()*3 + 3 + "px";
+    s.style.animationDuration = (Math.random()*3 + 2) + "s";
+
+    document.body.appendChild(s);
+
+    // remove após animar
+    setTimeout(() => s.remove(), 5000);
+
+  }, 100); // cria confete a cada 100ms
+}
+
+// iniciar serpentinas na tela inicial
+startSerpentines();
+;
+  // ================= FASE 1 =================
+  const startScreen = document.getElementById("startScreen");
+  const gameScreen = document.getElementById("game");
+  const phaseWinScreen = document.getElementById("phaseWin");
+  const loseScreen = document.getElementById("lose");
+
+  const player = document.getElementById("player");
+  const scoreText = document.getElementById("score");
+  let score = 0;
+  let playerX = window.innerWidth / 2;
+  const playerWidth = 50;
+  const items = [];
+  let gameOver = false;
+  let gameWon = false;
+  let spawnInterval;
+  player.style.left = playerX + "px";
+
+  window.addEventListener("resize", () => { player.style.bottom = "10%"; });
+  document.addEventListener("mousemove", e => { 
+    if(!gameOver && !gameWon){ 
+      playerX = e.clientX - playerWidth/2; 
+      if(playerX<0) playerX=0; 
+      if(playerX>window.innerWidth-50) playerX=window.innerWidth-50; 
+      player.style.left = playerX+"px"; 
+    } 
+  });
+  document.addEventListener("touchmove", e => { 
+    if(!gameOver && !gameWon){ 
+      const touch = e.touches[0]; 
+      playerX = touch.clientX - playerWidth/2; 
+      if(playerX<0) playerX=0; 
+      if(playerX>window.innerWidth-50) playerX=window.innerWidth-50; 
+      player.style.left = playerX+"px"; 
+    } 
+  });
+
+  function startGame(){ startScreen.classList.remove("active"); gameScreen.classList.add("active"); resetGame(); }
+  function resetGame(){
+    score=0; scoreText.textContent="Hearts: 0"; gameOver=false; gameWon=false;
+    items.forEach(i=>i.el.remove()); items.length=0;
+    playerX=window.innerWidth/2; player.style.left=playerX+"px";
+    spawnInterval=setInterval(spawnItem,1000); update();
+  }
+  function spawnItem(){
+    if(gameOver||gameWon) return;
+    const item=document.createElement("div"); item.classList.add("item");
+    const type=Math.random()<0.7?"heart":"skull";
+    item.dataset.type=type; item.textContent=type==="heart"?"❤️":"💀";
+    item.style.left=Math.random()*(window.innerWidth-36)+"px";
+    item.style.top="-50px"; gameScreen.appendChild(item);
+    items.push({el:item,y:-50,speed:2+Math.random()*3});
+  }
+  function update(){
+    if(gameOver||gameWon) return;
+    for(let i=items.length-1;i>=0;i--){
+      const item=items[i]; item.y+=item.speed; item.el.style.top=item.y+"px";
+      const playerRect=player.getBoundingClientRect();
+      const itemRect=item.el.getBoundingClientRect();
+      if(playerRect.left<itemRect.right && playerRect.right>itemRect.left && playerRect.top<itemRect.bottom && playerRect.bottom>itemRect.top){
+        if(item.el.dataset.type==="heart"){ 
+          score++; scoreText.textContent="Hearts: "+score; item.el.remove(); items.splice(i,1);
+          if(score>=15){ 
+            gameWon=true; clearInterval(spawnInterval); gameScreen.classList.remove("active"); phaseWinScreen.classList.add("active"); 
+            break; 
+          }
+        } else { 
+          gameOver=true; clearInterval(spawnInterval); loseScreen.classList.add("active"); break; 
+        }
+      } else if(item.y>window.innerHeight){ item.el.remove(); items.splice(i,1);}
+    }
+    if(!gameOver&&!gameWon) requestAnimationFrame(update);
+  }
+  function restartGame(){ loseScreen.classList.remove("active"); gameScreen.classList.add("active"); resetGame(); }
+
+  // ================= FASE 2 =================
+  const memoryGameScreen = document.getElementById("memoryGame");
+  const memoryBoard = document.getElementById("memoryBoard");
+  const memoryScoreText = document.getElementById("memoryScore");
+  const phase2WinScreen = document.getElementById("phase2Win");
+  let memoryCards=[], firstCard=null, secondCard=null, foundPairs=0;
+
+  function startMemoryGame(){ phaseWinScreen.classList.remove("active"); memoryGameScreen.classList.add("active"); setupMemoryGame(); }
+  function setupMemoryGame(){
+    memoryBoard.innerHTML=""; memoryCards=[]; foundPairs=0; memoryScoreText.textContent="Pairs found: 0 / 7"; firstCard=null; secondCard=null;
+    const emojis=["🌼","🍋","⭐","🐥","🧸","🍯","🟡"];
+    const pairs=[...emojis,...emojis].sort(()=>Math.random()-0.5);
+    pairs.forEach(e=>{
+      const card=document.createElement("div"); card.classList.add("memoryCard");
+      const front=document.createElement("div"); front.classList.add("memoryCardInner","memoryCardFront"); front.textContent=e;
+      const back=document.createElement("div"); back.classList.add("memoryCardInner","memoryCardBack");
+      card.appendChild(front); card.appendChild(back);
+      card.addEventListener("click",()=>flipCard(card));
+      memoryBoard.appendChild(card); memoryCards.push(card);
+    });
+  }
+  function flipCard(card){
+    if(card===firstCard||card.classList.contains("flipped")) return;
+    card.classList.add("flipped");
+    if(!firstCard) firstCard=card; else{ secondCard=card; setTimeout(checkMatch,600); }
+  }
+  function checkMatch(){
+    const firstEmoji=firstCard.querySelector(".memoryCardFront").textContent;
+    const secondEmoji=secondCard.querySelector(".memoryCardFront").textContent;
+    if(firstEmoji===secondEmoji){ 
+      foundPairs++; memoryScoreText.textContent=`Pairs found: ${foundPairs} / 7`;
+      if(foundPairs===7){ memoryGameScreen.classList.remove("active"); phase2WinScreen.classList.add("active"); }
+    } else { firstCard.classList.remove("flipped"); secondCard.classList.remove("flipped"); }
+    firstCard=null; secondCard=null;
+  }
+
+  // ================= FASE 3 =================
+  const mazeGameScreen = document.getElementById("mazeGameScreen");
+  const mazeBoard = document.getElementById("mazeBoard");
+  const mazeWinScreen = document.getElementById("mazeWinScreen");
+
+  const maze = [
+    [1,1,1,1,1,1,1,1,1],
+    [1,0,0,0,1,0,0,0,1],
+    [1,0,1,0,1,0,1,0,1],
+    [1,0,1,0,0,0,1,0,1],
+    [1,0,1,1,1,0,1,0,1],
+    [1,0,0,0,0,0,1,0,1],
+    [1,1,1,1,1,1,1,1,1]
+  ];
+
+  let playerPos = {x:1, y:1};
+  const endPos = {x:7, y:5};
+  let mazeFinished = false;
+
+  function startMazeGame(){
+    phase2WinScreen.classList.remove("active");
+    mazeGameScreen.classList.add("active");
+    playerPos = {x:1, y:1};
+    mazeFinished = false;
+    drawMaze();
+  }
+
+  function drawMaze(){
+    mazeBoard.innerHTML="";
+    mazeBoard.style.gridTemplateColumns = `repeat(${maze[0].length},28px)`;
+    mazeBoard.style.gridTemplateRows = `repeat(${maze.length},28px)`;
+    for(let y=0;y<maze.length;y++){
+      for(let x=0;x<maze[y].length;x++){
+        const cell = document.createElement("div");
+        cell.classList.add("mazeCell");
+        if(maze[y][x]===1) cell.classList.add("wall"); else cell.classList.add("path");
+        if(x===playerPos.x && y===playerPos.y) cell.textContent = "🐱";
+        if(x===endPos.x && y===endPos.y) cell.textContent = "💌";
+        mazeBoard.appendChild(cell);
+      }
+    }
+  }
+
+  function movePlayer(dx, dy){
+    if(mazeFinished) return;
+    const newX = playerPos.x + dx;
+    const newY = playerPos.y + dy;
+    if(maze[newY][newX]===0){ playerPos={x:newX,y:newY}; drawMaze(); }
+    if(playerPos.x===endPos.x && playerPos.y===endPos.y){ mazeFinished=true; mazeGameScreen.classList.remove("active"); mazeWinScreen.classList.add("active"); }
+  }
+
+  // ================= CARTA =================
+  const letterScreen = document.getElementById("letterScreen");
+  const letterContent = document.getElementById("letterContent");
+  let heartInterval;
+
+  function openLetter(){
+    mazeWinScreen.classList.remove("active");
+    letterScreen.classList.add("active");
+    const fullText = `Dear Helene,
+
+I never imagined I would be able to create a website for someone. Even though it's something simple, it carries all the affection and respect I have for you. At first, I thought it would just be a friendship from the game, something fleeting, but when you left without saying a word, I realized how much I missed your company.
+
+I never managed to trust and talk openly with anyone from that game, but when I met you, I felt I could really talk and be exactly who I am. Before you, I only had contact with those gay people you know, so I couldn't talk like a girl 😂.
+
+You are a warrior because even when I find myself annoying at times, you are always by my side, listening to me and cheering me up as you always do.
+
+You say you don't know why people like you, but I can tell you that for me you are special in every way, more than you might imagine. Sometimes, it's very difficult to explain emotions in words, but you can be sure that when I'm with you, it's a feeling of excitement and mood, it's like a feeling of enjoying the moment and ignoring everything around you, that's why I support and admire you so much ❤️
+
+This small gesture is just a way of saying that you have marked and still mark my heart.
+
+I really wanted to make a surprise box like you did with Zlur, but unfortunately I can't afford it, so since I couldn't give a physical gift I thought of giving a virtual one would be cool. I hope this letter has boosted your spirits for today, because you have the whole day to celebrate 🤭
+
+Happy birthday!!!
+
+With love,
+Fernanda ✨`;
+    letterContent.textContent = "";
+    let i = 0;
+    const typing = setInterval(()=>{
+      letterContent.textContent += fullText[i];
+      i++;
+      if(i>=fullText.length) clearInterval(typing);
+    },40);
+
+    // Confetes
+    for(let j=0;j<100;j++){
+      const c = document.createElement("div");
+      c.classList.add("confetti");
+      c.style.background = `hsl(${Math.random()*360},70%,60%)`;
+      c.style.left = Math.random()*100+"%";
+      c.style.width = c.style.height = Math.random()*8+4+"px";
+      c.style.animationDuration = Math.random()*3+2+"s";
+      document.body.appendChild(c);
+      setTimeout(()=>c.remove(),5000);
+    }
+
+    // Corações
+    if(!heartInterval){
+      heartInterval = setInterval(()=>{
+        const heart = document.createElement("div");
+        heart.classList.add("heart");
+        heart.innerText = "💖";
+        heart.style.left = Math.random()*100+"vw";
+        heart.style.fontSize = (Math.random()*40+30)+"px";
+        heart.style.animationDuration = (Math.random()*3+3)+"s";
+        document.body.appendChild(heart);
+        setTimeout(()=>heart.remove(),6000);
+      },500);
+    }
+  }
+</script>
+
+</body>
+</html>
